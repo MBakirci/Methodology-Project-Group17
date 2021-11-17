@@ -9,9 +9,9 @@ author:
 - Lieke Buuron – 2082095
 date: "17-11-2021"
 output:
-  github_document: default
-  html_document: default
   word_document: default
+  html_document: default
+  github_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -20,8 +20,8 @@ library(knitr)
 ```
 
 
-
-```{r}
+# Initial data import and manipulation
+```{r, error=FALSE}
 KNMI_20200710 <- read.csv("KNMI_20200710.csv", header= TRUE)
 library(psych)
 install.packages("lubridate")
@@ -61,8 +61,8 @@ head(knmi)
 knmi <- knmi[sample(nrow(knmi)),]
 ```
 
-
-```{r}
+# Generating the Correlation plot
+```{r, error=FALSE}
 
 knmicorr <- knmi
 knmicorr$YYYYMMDD <- NULL
@@ -83,7 +83,7 @@ corrplot(knmicorrelatie,
 
 
 ```
-```{r}
+```{r, error=FALSE}
 fractionTraining   <- 0.60
 fractionValidation <- 0.20
 fractionTest       <- 0.20
@@ -103,10 +103,11 @@ dfTest       <- knmi[indicesTest, ]
 ```
 
 
-```{r}
-#test training set on variable daynumber
 
-## MODEL 0 ---
+# Test training set on variable daynumber
+
+## MODEL 0
+```{r, error=FALSE}
 
 plot(dfTraining$daynumber, dfTraining$dummy)
 abline(lm(dfTraining$dummy ~ dfTraining$daynumber, data = dfTraining), col = "blue")
@@ -125,12 +126,9 @@ m0sq
 
 
 
+## MODEL 1
+```{r, error=FALSE}
 
-
-
-```{r}
-
-## MODEL 1 ---
 plot(dfTraining$PG, dfTraining$dummy)
 abline(lm(dfTraining$dummy ~ dfTraining$PG, data = dfTraining), col = "blue")
 
@@ -148,11 +146,9 @@ m1sq
 ```
 
 
+## MODEL 2
+```{r, error=FALSE}
 
-
-```{r}
-
-## MODEL 2 --
 plot(dfTraining$TN, dfTraining$dummy)
 abline(lm(dfTraining$dummy ~ dfTraining$TN, data = dfTraining), col = "blue")
 
@@ -166,9 +162,7 @@ m2sq <- sum(dfValidation$m2sq)
 m2sq
 ```
 
-```{r}
-
-
+```{r, error=FALSE}
 m1
 dfTest$m1 <- 5.8461357 + dfValidation$PG*-0.0005702
 
@@ -180,20 +174,10 @@ head(dfTest)
 dfTest$dummyavg <- mean(dfTraining$dummy)
 dfTest$seavg <- (dfTest$dummyavg - dfTest$dummy)^2
 sum(dfTest$seavg)
-
-
-
-
-
-
 ```
 
 
-
-```{r}
-
-
-
+```{r, error=FALSE}
 m0
 dfTest$m0 <- 4.938e-02 + dfValidation$daynumber*-3.762e-07
 
@@ -206,9 +190,10 @@ dfTest$dummyavg <- mean(dfTraining$dummy)
 dfTest$seavg <- (dfTest$dummyavg - dfTest$dummy)^2
 sum(dfTest$seavg)
 
-
 ```
-```{r}
+
+
+```{r, error=FALSE}
 m2
 dfTest$m2 <- 0.0350206 + dfValidation$TN*-0.0004272
 
@@ -223,7 +208,8 @@ sum(dfTest$seavg)
 
 ```
 
-```{r}
+
+```{r, error=FALSE}
 plot(dfTraining$daynumber, dfTraining$dummy)
 abline(lm(dfTraining$dummy ~ dfTraining$daynumber, data = dfTraining), col = "blue")
 m3 <- lm(dfTraining$dummy ~ dfTraining$PG + dfTraining$daynumber +  dfTraining$TN)
@@ -235,7 +221,7 @@ dfValidation$m3sq <- (dfValidation$m3 - dfValidation$dummy)^2
 m3sq <- sum(dfValidation$m3sq)
 m3sq
 ```
-```{r}
+```{r, error=FALSE}
 m3
 dfTest$m3 <- 5.604e+00 + dfTest$daynumber * 2.930e-07 + dfTest$PG*-5.486e-04 + dfTest$TN*3.031e-04
 
@@ -251,35 +237,32 @@ m3sqtestavg
 ```
  
  
- 
- 
- 
-```{r}
-# 2030 Predictions for extreme precipitation(>=100mm)
-# We use the variable 'daynumber', PG (24HR average atmospheric pressure reduced to sea level in hPa) en TN (Lowest temperature in degrees Celsius)
+# Predicitons 
+2030 Predictions for extreme precipitation(>=100mm)  
+We use the variable 'daynumber', PG (24HR average atmospheric pressure reduced to sea level in hPa) en TN (Lowest temperature in degrees Celsius)  
 
-## On 10 July 2030:
-##TN = 66.28685
-##PG = 10156.25
-##daynumber = 43656 + 3652 = 47308 (+10 years)
+On 10 July 2030:  
+#TN = 66.28685  
+#PG = 10156.25  
+#daynumber = 43656 + 3652 = 47308 (+10 years)
 
-## initial dataset is until 10 July 2020
+(initial dataset is until 10 July 2020)
+```{r, error=FALSE}
 
 PG2030 = lm(dfTraining$PG ~ dfTraining$daynumber)
 PG2030
 
 PG2030_value = 1.322e-04*47308 + 1.015e+04
 PG2030_value
+```
 
 ## fill in the model:
-
+```{r, error=FALSE}
 dfTest$m1 <- 5.8461357 + dfValidation$PG*-0.0005702
 
 Value_2030_July = 10156.25 * -0.0005702 + 5.8461357
 Value_2030_July
 
 0.05504195*365
-
-## We have a probability of 0.05504195 that it will have more than 100mm precipitation on average each day * 365 = 20.09031 days a year.
-
 ```
+We have a probability of 0.05504195 that it will have more than 100mm precipitation on average each day * 365 = 20.09031 days a year.

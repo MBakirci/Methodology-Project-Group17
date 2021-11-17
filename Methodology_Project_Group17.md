@@ -4,27 +4,13 @@ Group 17Bart Kuipers - 2085029Daniel Noumon - 2076640Joël van Run -
 2082698Mehmet Bakirci – 208610Lieke Buuron – 2082095
 17-11-2021
 
+# Initial data import and manipulation
+
 ``` r
 KNMI_20200710 <- read.csv("KNMI_20200710.csv", header= TRUE)
 library(psych)
 install.packages("lubridate")
-```
-
-    ## Installing package into '/home/mehmet/R/x86_64-pc-linux-gnu-library/4.1'
-    ## (as 'lib' is unspecified)
-
-``` r
 library(lubridate)
-```
-
-    ## 
-    ## Attaching package: 'lubridate'
-
-    ## The following objects are masked from 'package:base':
-    ## 
-    ##     date, intersect, setdiff, union
-
-``` r
 head(KNMI_20200710)
 ```
 
@@ -83,7 +69,6 @@ knmi <- knmi[!is.na(knmi$RH),]
 knmi$dummy <- ifelse (knmi$RH > 100, 1, 0) 
 head(knmi)
 ```
-
     ##        YYYYMMDD DDVEC  TG  TN  TX T10N SQ SP  Q DR  RH RHX RHXH    PG    PX
     ## 1827 1906-01-01   112 -32 -70  -3   NA 54 69 NA NA   0   0   NA 10235 10274
     ## 1828 1906-01-02   122 -23 -44  -8   NA 26 33 NA NA   0   0   NA 10187 10226
@@ -103,6 +88,8 @@ head(knmi)
 knmi <- knmi[sample(nrow(knmi)),]
 ```
 
+# Generating the Correlation plot
+
 ``` r
 knmicorr <- knmi
 knmicorr$YYYYMMDD <- NULL
@@ -114,18 +101,10 @@ KNMI_20200710$YYYYMMDD <- c(1:43656)
 knmicorrelatie <- cor(knmicorr, use="complete.obs")
 
 install.packages("corrplot")
-```
-
-    ## Installing package into '/home/mehmet/R/x86_64-pc-linux-gnu-library/4.1'
-    ## (as 'lib' is unspecified)
-
-``` r
 library(corrplot)
-```
 
     ## corrplot 0.91 loaded
 
-``` r
 corrplot(knmicorrelatie,
          title = "Correlationplot knmi data",
          mar = c(0, 0, 2, 0))
@@ -152,11 +131,11 @@ dfValidation <- knmi[indicesValidation, ]
 dfTest       <- knmi[indicesTest, ]
 ```
 
+# Test training set on variable daynumber
+
+## MODEL 0
+
 ``` r
-#test training set on variable daynumber
-
-## MODEL 0 ---
-
 plot(dfTraining$daynumber, dfTraining$dummy)
 abline(lm(dfTraining$dummy ~ dfTraining$daynumber, data = dfTraining), col = "blue")
 ```
@@ -187,8 +166,9 @@ m0sq
 
     ## [1] 434.367
 
+## MODEL 1
+
 ``` r
-## MODEL 1 ---
 plot(dfTraining$PG, dfTraining$dummy)
 abline(lm(dfTraining$dummy ~ dfTraining$PG, data = dfTraining), col = "blue")
 ```
@@ -220,8 +200,9 @@ m1sq
 
     ## [1] 411.651
 
+## MODEL 2
+
 ``` r
-## MODEL 2 --
 plot(dfTraining$TN, dfTraining$dummy)
 abline(lm(dfTraining$dummy ~ dfTraining$TN, data = dfTraining), col = "blue")
 ```
@@ -481,17 +462,21 @@ m3sqtestavg
 
     ## [1] 442.6889
 
+# Predicitons
+
+2030 Predictions for extreme precipitation(&gt;=100mm)  
+We use the variable ‘daynumber’, PG (24HR average atmospheric pressure
+reduced to sea level in hPa) en TN (Lowest temperature in degrees
+Celsius)
+
+On 10 July 2030:  
+\#TN = 66.28685  
+\#PG = 10156.25  
+\#daynumber = 43656 + 3652 = 47308 (+10 years)
+
+(initial dataset is until 10 July 2020)
+
 ``` r
-# 2030 Predictions for extreme precipitation(>=100mm)
-# We use the variable 'daynumber', PG (24HR average atmospheric pressure reduced to sea level in hPa) en TN (Lowest temperature in degrees Celsius)
-
-## On 10 July 2030:
-##TN = 66.28685
-##PG = 10156.25
-##daynumber = 43656 + 3652 = 47308 (+10 years)
-
-## initial dataset is until 10 July 2020
-
 PG2030 = lm(dfTraining$PG ~ dfTraining$daynumber)
 PG2030
 ```
@@ -511,9 +496,9 @@ PG2030_value
 
     ## [1] 10156.25
 
-``` r
 ## fill in the model:
 
+``` r
 dfTest$m1 <- 5.8461357 + dfValidation$PG*-0.0005702
 
 Value_2030_July = 10156.25 * -0.0005702 + 5.8461357
@@ -528,6 +513,5 @@ Value_2030_July
 
     ## [1] 20.09031
 
-``` r
-## We have a probability of 0.05504195 that it will have more than 100mm precipitation on average each day * 365 = 20.09031 days a year.
-```
+We have a probability of 0.05504195 that it will have more than 100mm
+precipitation on average each day \* 365 = 20.09031 days a year.
