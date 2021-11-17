@@ -1,0 +1,284 @@
+---
+title: "Methodology for Premasters DSS"
+author:
+- Group 17 
+- Bart Kuipers - 2085029 
+- Daniel Noumon - 2076640 
+- Joël van Run - 2082698
+- Mehmet Bakirci – 208610
+- Lieke Buuron – 2082095
+date: "17-11-2021"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+```
+
+
+
+```{r}
+KNMI_20200710 <- read.csv("KNMI_20200710.csv", header= TRUE)
+library(psych)
+install.packages("lubridate")
+library(lubridate)
+head(KNMI_20200710)
+KNMI_20200710$daynumber <- c(1:43656)
+knmi <- KNMI_20200710
+set.seed(123)
+knmi$YYYYMMDD <-ymd(knmi$YYYYMMDD)
+
+
+knmi$STN <- NULL
+knmi$FHVEC<- NULL
+knmi$FG<- NULL
+knmi$FHX<- NULL
+knmi$FHXH<- NULL
+knmi$FHN<- NULL
+knmi$FHNH<- NULL
+knmi$FXX<- NULL
+knmi$FXXH<- NULL
+knmi$TNH<- NULL
+knmi$TXH<- NULL
+knmi$T10NH<- NULL
+knmi$PXH<- NULL
+knmi$PNH<- NULL
+knmi$VVN<- NULL
+knmi$VVNH<- NULL
+knmi$VVX<- NULL
+knmi$VVXH<- NULL
+knmi$UXN<- NULL
+knmi$UNH<- NULL
+
+
+knmi <- knmi[!is.na(knmi$RH),]
+knmi$dummy <- ifelse (knmi$RH > 100, 1, 0) 
+head(knmi)
+knmi <- knmi[sample(nrow(knmi)),]
+```
+
+
+```{r}
+
+knmicorr <- knmi
+knmicorr$YYYYMMDD <- NULL
+knmicorr$year <- NULL
+knmicorr$dagnumber <- c(1:41800)
+knmicorr$daynumber <- NULL
+
+KNMI_20200710$YYYYMMDD <- c(1:43656)
+knmicorrelatie <- cor(knmicorr, use="complete.obs")
+
+install.packages("corrplot")
+library(corrplot)
+corrplot(knmicorrelatie,
+         title = "Correlationplot knmi data",
+         mar = c(0, 0, 2, 0))
+
+
+
+
+```
+```{r}
+fractionTraining   <- 0.60
+fractionValidation <- 0.20
+fractionTest       <- 0.20
+
+sampleSizeTraining   <- floor(fractionTraining   * nrow(knmi))
+sampleSizeValidation <- floor(fractionValidation * nrow(knmi))
+sampleSizeTest       <- floor(fractionTest       * nrow(knmi))
+
+indicesTraining    <- sort(sample(seq_len(nrow(knmi)), size=sampleSizeTraining))
+indicesNotTraining <- setdiff(seq_len(nrow(knmi)), indicesTraining)
+indicesValidation  <- sort(sample(indicesNotTraining, size=sampleSizeValidation))
+indicesTest        <- setdiff(indicesNotTraining, indicesValidation)
+
+dfTraining   <- knmi[indicesTraining, ]
+dfValidation <- knmi[indicesValidation, ]
+dfTest       <- knmi[indicesTest, ]
+```
+
+
+```{r}
+#test training set on variable daynumber
+
+## MODEL 0 ---
+
+plot(dfTraining$daynumber, dfTraining$dummy)
+abline(lm(dfTraining$dummy ~ dfTraining$daynumber, data = dfTraining), col = "blue")
+m0 <- lm(dfTraining$dummy ~ dfTraining$daynumber)
+
+m0
+dfValidation$m0 <- 4.938e-02 + dfValidation$daynumber * 3.762e-07
+
+dfValidation$m0sq <- (dfValidation$m0 - dfValidation$dummy)^2
+m0sq <- sum(dfValidation$m0sq)
+m0sq
+
+
+
+```
+
+
+
+
+
+
+```{r}
+
+## MODEL 1 ---
+plot(dfTraining$PG, dfTraining$dummy)
+abline(lm(dfTraining$dummy ~ dfTraining$PG, data = dfTraining), col = "blue")
+
+m1 <- lm(dfTraining$dummy ~ dfTraining$PG)
+
+m1
+dfValidation$m1 <- 5.8461357 + dfValidation$PG*-0.0005702 
+
+dfValidation$m1sq <- (dfValidation$m1 - dfValidation$dummy)^2
+
+m1sq <- sum(dfValidation$m1sq)
+m1sq
+
+
+```
+
+
+
+
+```{r}
+
+## MODEL 2 --
+plot(dfTraining$TN, dfTraining$dummy)
+abline(lm(dfTraining$dummy ~ dfTraining$TN, data = dfTraining), col = "blue")
+
+m2 <- lm(dfTraining$dummy ~ dfTraining$TN)
+
+m2
+dfValidation$m2 <- 0.0350206 + dfValidation$TN*0.0004272
+
+dfValidation$m2sq <- (dfValidation$m2 - dfValidation$dummy)^2
+m2sq <- sum(dfValidation$m2sq)
+m2sq
+```
+
+```{r}
+
+
+m1
+dfTest$m1 <- 5.8461357 + dfValidation$PG*-0.0005702
+
+dfTest$m1sq <- (dfTest$m1 - dfTest$dummy)^2
+m1sqtest <- sum(dfTest$m1sq)
+m1sqtest
+
+head(dfTest)
+dfTest$dummyavg <- mean(dfTraining$dummy)
+dfTest$seavg <- (dfTest$dummyavg - dfTest$dummy)^2
+sum(dfTest$seavg)
+
+
+
+
+
+
+```
+
+
+
+```{r}
+
+
+
+m0
+dfTest$m0 <- 4.938e-02 + dfValidation$daynumber*-3.762e-07
+
+dfTest$m0sq <- (dfTest$m0 - dfTest$dummy)^2
+m0sqtest <- sum(dfTest$m0sq)
+m0sqtest
+
+head(dfTest)
+dfTest$dummyavg <- mean(dfTraining$dummy)
+dfTest$seavg <- (dfTest$dummyavg - dfTest$dummy)^2
+sum(dfTest$seavg)
+
+
+```
+```{r}
+m2
+dfTest$m2 <- 0.0350206 + dfValidation$TN*-0.0004272
+
+dfTest$m2sq <- (dfTest$m2 - dfTest$dummy)^2
+m2sqtest <- sum(dfTest$m2sq)
+m2sqtest
+
+head(dfTest)
+dfTest$dummyavg <- mean(dfTraining$dummy)
+dfTest$seavg <- (dfTest$dummyavg - dfTest$dummy)^2
+sum(dfTest$seavg)
+
+```
+
+```{r}
+plot(dfTraining$daynumber, dfTraining$dummy)
+abline(lm(dfTraining$dummy ~ dfTraining$daynumber, data = dfTraining), col = "blue")
+m3 <- lm(dfTraining$dummy ~ dfTraining$PG + dfTraining$daynumber +  dfTraining$TN)
+
+m3
+dfValidation$m3 <- 5.604e+00 + dfValidation$daynumber * 2.930e-07 + dfValidation$PG*-5.486e-04 + dfValidation$TN*3.031e-04
+
+dfValidation$m3sq <- (dfValidation$m3 - dfValidation$dummy)^2
+m3sq <- sum(dfValidation$m3sq)
+m3sq
+```
+```{r}
+m3
+dfTest$m3 <- 5.604e+00 + dfTest$daynumber * 2.930e-07 + dfTest$PG*-5.486e-04 + dfTest$TN*3.031e-04
+
+dfTest$m3sq <- (dfTest$m3 - dfTest$dummy)^2
+m3sqtest <- sum(dfTest$m3sq)
+m3sqtest
+
+dfTest$dummyavg <- mean(dfTest$dummy)
+dfTest$m3sqavg <- (dfTest$dummyavg - dfTest$dummy)^2
+m3sqtestavg <- sum(dfTest$m3sqavg)
+m3sqtestavg
+
+```
+ 
+ 
+ 
+ 
+ 
+```{r}
+# 2030 Predictions for extreme precipitation(>=100mm)
+# We use the variable 'daynumber', PG (24HR average atmospheric pressure reduced to sea level in hPa) en TN (Lowest temperature in degrees Celsius)
+
+## On 10 July 2030:
+##TN = 66.28685
+##PG = 10156.25
+##daynumber = 43656 + 3652 = 47308 (+10 years)
+
+## initial dataset is until 10 July 2020
+
+PG2030 = lm(dfTraining$PG ~ dfTraining$daynumber)
+PG2030
+
+PG2030_value = 1.322e-04*47308 + 1.015e+04
+PG2030_value
+
+## fill in the model:
+
+dfTest$m1 <- 5.8461357 + dfValidation$PG*-0.0005702
+
+Value_2030_July = 10156.25 * -0.0005702 + 5.8461357
+Value_2030_July
+
+0.05504195*365
+
+## We have a probability of 0.05504195 that it will have more than 100mm precipitation on average each day * 365 = 20.09031 days a year.
+
+```
