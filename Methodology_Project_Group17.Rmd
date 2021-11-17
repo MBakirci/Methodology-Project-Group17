@@ -9,8 +9,9 @@ author:
 - Lieke Buuron – 2082095
 date: "17-11-2021"
 output:
-  word_document: default
+  github_document: default
   html_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
