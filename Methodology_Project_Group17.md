@@ -1,8 +1,12 @@
 Methodology for Premasters DSS
 ================
-Group 17Bart Kuipers - 2085029Daniel Noumon - 2076640Joël van Run -
-2082698Mehmet Bakirci – 208610Lieke Buuron – 2082095
-17-11-2021
+# Group 17  
+Bart Kuipers - 2085029  
+Daniel Noumon - 2076640  
+Joël van Run -2082698 Mehmet Bakirci – 208610  
+Lieke Buuron – 2082095  
+
+## 17-11-2021
 
 # Initial data import and manipulation
 
